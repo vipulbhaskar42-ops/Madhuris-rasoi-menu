@@ -6,5 +6,39 @@ function iconFor(n){let x=n.toLowerCase();if(x.includes('biryani')||x.includes('
 draw();search.addEventListener('input',()=>draw(search.value.trim().toLowerCase()));
 let idx=-1;const flip=document.getElementById('flipbook');document.getElementById('flipToggle').onclick=()=>{flip.classList.remove('hidden');document.getElementById('menu').classList.add('hidden');document.querySelector('.hero').classList.add('compact');window.scrollTo(0,0);};document.getElementById('backToMenu').onclick=()=>{flip.classList.add('hidden');document.getElementById('menu').classList.remove('hidden');document.querySelector('.hero').classList.remove('compact');window.scrollTo(0,0)};
 function fillPage(side,catIndex){const page=document.getElementById(side+'Page');if(catIndex>=CATEGORIES.length){page.classList.add('blank-page');document.getElementById(side+'No').textContent='';document.getElementById(side+'Title').textContent='';document.getElementById(side+'Items').innerHTML='';return;}page.classList.remove('blank-page');const c=CATEGORIES[catIndex];document.getElementById(side+'No').textContent=`${catIndex+1} / ${CATEGORIES.length}`;document.getElementById(side+'Title').textContent=c.title;document.getElementById(side+'Items').innerHTML=c.items.map(([n,p])=>`<div class="flip-item"><span>${n}</span><b>${p.replace('~','~ ')}</b></div>`).join('');}
-function flipRender(){const opened=idx>=0;document.querySelector('.book-cover').style.display=opened?'none':'flex';document.querySelector('.book-spread').style.display=opened?'grid':'none';document.getElementById('flipCount').textContent=opened?`Pages ${idx+1}–${Math.min(idx+2,CATEGORIES.length)} of ${CATEGORIES.length}`:'Cover';document.getElementById('prev').disabled=idx<0;document.getElementById('next').disabled=idx>=CATEGORIES.length-1;if(opened){fillPage('left',idx);fillPage('right',idx+1);const spread=document.querySelector('.book-spread');spread.classList.remove('turn-forward','turn-back');void spread.offsetWidth;spread.classList.add('turn-forward');}}
-document.getElementById('openBook').onclick=()=>{idx=0;flipRender()};document.getElementById('prev').onclick=()=>{idx=idx<=0?-1:Math.max(0,idx-2);flipRender()};document.getElementById('next').onclick=()=>{idx=Math.min(CATEGORIES.length-1,idx+2);flipRender()};flipRender();
+function flipRender(direction="forward"){const opened=idx>=0;document.querySelector('.book-cover').style.display=opened?'none':'flex';document.querySelector('.book-spread').style.display=opened?'grid':'none';document.getElementById('flipCount').textContent=opened?`Pages ${idx+1}–${Math.min(idx+2,CATEGORIES.length)} of ${CATEGORIES.length}`:'Cover';document.getElementById('prev').disabled=idx<0;document.getElementById('next').disabled=idx>=CATEGORIES.length-1;if(opened){fillPage('left',idx);fillPage('right',idx+1);const spread=document.querySelector('.book-spread');spread.classList.remove('turn-forward','turn-back','is-dragging');spread.style.removeProperty('--drag-angle');void spread.offsetWidth;if(direction)spread.classList.add(direction==='back'?'turn-back':'turn-forward');}}
+document.getElementById('openBook').onclick=()=>{idx=0;flipRender('forward')};
+document.getElementById('prev').onclick=()=>{idx=idx<=0?-1:Math.max(0,idx-2);flipRender('back')};
+document.getElementById('next').onclick=()=>{idx=Math.min(CATEGORIES.length-1,idx+2);flipRender('forward')};
+// Pointer-based drag works with touch, stylus, and mouse. A horizontal swipe turns a spread.
+const spreadEl=document.querySelector('.book-spread');
+let dragStartX=0,dragStartY=0,dragging=false,dragPointer=null;
+spreadEl.addEventListener('pointerdown',e=>{
+  if(idx<0 || e.target.closest('button')) return;
+  dragging=true;dragPointer=e.pointerId;dragStartX=e.clientX;dragStartY=e.clientY;
+  spreadEl.setPointerCapture?.(e.pointerId);spreadEl.classList.add('is-dragging');
+});
+spreadEl.addEventListener('pointermove',e=>{
+  if(!dragging || e.pointerId!==dragPointer) return;
+  const dx=e.clientX-dragStartX,dy=e.clientY-dragStartY;
+  if(Math.abs(dx)>Math.abs(dy)*.7){
+    const width=Math.max(1,spreadEl.getBoundingClientRect().width/2);
+    const angle=Math.max(-150,Math.min(150,(dx/width)*150));
+    spreadEl.style.setProperty('--drag-angle',`${angle}deg`);
+  }
+});
+function finishDrag(e){
+  if(!dragging || (e && e.pointerId!==dragPointer)) return;
+  const dx=(e?.clientX ?? dragStartX)-dragStartX;
+  const dy=(e?.clientY ?? dragStartY)-dragStartY;
+  dragging=false;dragPointer=null;
+  spreadEl.classList.remove('is-dragging');spreadEl.style.removeProperty('--drag-angle');
+  if(Math.abs(dx)>48 && Math.abs(dx)>Math.abs(dy)*1.15){
+    if(dx<0 && idx<CATEGORIES.length-1){idx=Math.min(CATEGORIES.length-1,idx+2);flipRender('forward')}
+    else if(dx>0 && idx>0){idx=Math.max(0,idx-2);flipRender('back')}
+  }
+}
+spreadEl.addEventListener('pointerup',finishDrag);
+spreadEl.addEventListener('pointercancel',finishDrag);
+spreadEl.addEventListener('lostpointercapture',()=>{if(dragging){dragging=false;spreadEl.classList.remove('is-dragging');spreadEl.style.removeProperty('--drag-angle')}});
+flipRender();
