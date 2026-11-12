@@ -19,7 +19,7 @@ function buildBook(){
  const pages=[pageMarkup('',[],0,true)];
  CATEGORIES.forEach((c,i)=>pages.push(pageMarkup(c.title,c.items,i+1)));
  pages.push(pageMarkup('',[],CATEGORIES.length+1,false,true));
- pages.forEach(markup=>{const el=document.createElement('div');el.className='page-shell';el.innerHTML=markup;bookHost.appendChild(el);});
+ pages.forEach((markup,index)=>{const el=document.createElement('div');el.className='page-shell';if(index===0||index===pages.length-1){el.dataset.density='hard';el.classList.add('cover-shell');}el.innerHTML=markup;bookHost.appendChild(el);});
  pageFlip=new St.PageFlip(bookHost,{width:520,height:680,size:'stretch',minWidth:280,maxWidth:1100,minHeight:380,maxHeight:1400,drawShadow:true,flippingTime:1050,usePortrait:true,startPage:0,autoSize:true,maxShadowOpacity:.48,showCover:true,mobileScrollSupport:false,clickEventForward:true,swipeDistance:30,showPageCorners:true,disableFlipByClick:false});
  pageFlip.loadFromHTML(bookHost.querySelectorAll('.page-shell'));
  const update=()=>{const current=pageFlip.getCurrentPageIndex();const total=pageFlip.getPageCount();document.getElementById('flipCount').textContent=`Page ${current+1} of ${total}`;document.getElementById('prev').disabled=current<=0;document.getElementById('next').disabled=current>=total-1;};
