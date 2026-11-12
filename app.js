@@ -4,7 +4,7 @@ const titleEl=document.getElementById('pageTitle'), grid=document.getElementById
 const prev=document.getElementById('prev'), next=document.getElementById('next');
 let page=-1, filtered=null;
 const logo=document.getElementById('logoPhoto');
-logo.style.backgroundImage='url("assets/madhuris-rasoi-logo-reference.jpg")';
+logo.style.backgroundImage='url("madhuris-rasoi-logo-reference.jpg")';
 function render(){
  const total=(filtered||PAGES).length;
  cover.classList.toggle('show',page===-1); cover.classList.toggle('hidden',page!==-1);
